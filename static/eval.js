@@ -1,6 +1,28 @@
+const POINT_LABELS = {
+	0: 'Apex x',
+	1: 'Apex y',
+	2: 'TC x',
+	3: 'TC y',
+	4: 'M1 x',
+	5: 'M1 y',
+	6: 'M2 x',
+	7: 'M2 y',
+	8: 'T4 x',
+	9: 'T4 y',
+	10: 'T5 x',
+	11: 'T5 y',
+	12: 'T6 x',
+	13: 'T6 y',
+	14: 'T7 x',
+	15: 'T7 y',
+	16: 'T8 x',
+	17: 'T8 y'  	
+};
+Object.freeze(POINT_LABELS)
 const IMAGE_SIZE = 224;
 const COORD_SCALE = 5.0;
 var vhsModel = null;
+
 
 $(document).ready(function() {
 	loadModel();
@@ -28,7 +50,6 @@ async function predict(image) {
 	});
 
 	const values = await logits.data();
-	console.log(values);
 	return values
 }
 
@@ -185,6 +206,9 @@ async function writeRow(obj) {
 		pred_cell.style.width = '250px';
 		pred_cell.appendChild(pred_canvas);
 
+		var acc_cell = this.row.insertCell(3);
+		create_accuracy(obj.annotation, preds, acc_cell);
+
 	};
 
 }
@@ -195,6 +219,25 @@ function distance(x1, y1, x2, y2) {
 	return Math.sqrt(x*x + y*y);
 }
 
+function populate_individual_accuracy(gt, preds) {
+	var tableBody = document.getElementById('individualAccuracyTable').getElementsByTagName('tbody')[0]
+
+	for (let i = 0; i<gt.length; i++) {
+		var row = tableBody.insertRow(tableBody.rows.length);
+		var label_cell = row.insertCell(0);
+		label_cell.appendChild(document.createTextNode(POINT_LABELS[i]));
+
+		var gt_cell = row.insertCell(1);
+		gt_cell.appendChild(document.createTextNode(gt[i]));
+
+		var pred_cell = row.insertCell(2);
+		pred_cell.appendChild(document.createTextNode(preds[i]));
+
+		var diff_cell = row.insertCell(3);
+		diff_cell.appendChild(document.createTextNode(gt[i]-preds[i]));
+	}
+}
+
 function create_accuracy(gt, preds, cell) {
 	let gt_vertebrae = distance(gt[8], gt[9], gt[16], gt[17]);
 	let pred_vertebrae = distance(preds[8], preds[9], preds[16], preds[17]);
@@ -203,14 +246,61 @@ function create_accuracy(gt, preds, cell) {
 	let pred_minor = distance(preds[4], preds[5], preds[6], preds[7]);
 	
 	let gt_major = distance(gt[0], gt[1], gt[2], gt[3]);
-	let pred_major = distance(preds[0], preds[1], preds[2], preds[3]);
-	
+	let pred_major = distance(preds[0], preds[1], preds[2], preds[3]);	
 
 	let gt_vhs = (gt_minor+gt_major)/(gt_vertebrae*0.25);
 	let pred_vhs = (pred_minor+pred_major)/(pred_vertebrae*0.25);
 	
 
-	get_point_accuracy(gt, preds)
+	var accContainer = document.createElement("div");
+	var accTable = document.createElement("table");
+
+	var headerRow = accTable.insertRow(0);
+	var label_header = headerRow.insertCell(0);
+	label_header.innerHTML = 'Label';
+
+	var gt_header = headerRow.insertCell(1);
+	gt_header.innerHTML = 'Ground Truth';
+
+	var pred_header = headerRow.insertCell(2);
+	pred_header.innerHTML = 'Model Prediction';
+
+
+	var diff_header = headerRow.insertCell(3);
+	diff_header.innerHTML = 'Difference (pixel value):';
+
+	var vertebraeRow = accTable.insertRow(1);
+	vertebraeRow.insertCell(0).innerHTML = 'Vertebrae Length: ';
+	vertebraeRow.insertCell(1).innerHTML = gt_vertebrae.toFixed(3);
+	vertebraeRow.insertCell(2).innerHTML = pred_vertebrae.toFixed(3);
+	vertebraeRow.insertCell(3).innerHTML = (pred_vertebrae - gt_vertebrae).toFixed(3);
+
+	var minorAxisRow = accTable.insertRow(2);
+	minorAxisRow.insertCell(0).innerHTML = 'Minor Axis Length: ';
+	minorAxisRow.insertCell(1).innerHTML = gt_minor.toFixed(3);
+	minorAxisRow.insertCell(2).innerHTML = pred_minor.toFixed(3);
+	minorAxisRow.insertCell(3).innerHTML = (pred_minor - gt_vertebrae).toFixed(3);
+
+	var majorAxisRow = accTable.insertRow(3);
+	majorAxisRow.insertCell(0).innerHTML = 'Major Axis Length';
+	majorAxisRow.insertCell(1).innerHTML = gt_major.toFixed(3);
+	majorAxisRow.insertCell(2).innerHTML = pred_major.toFixed(3);
+	majorAxisRow.insertCell(3).innerHTML = (pred_major - gt_major).toFixed(3);
+
+	var vhsRow = accTable.insertRow(4);
+	vhsRow.insertCell(0).innerHTML = 'VHS Score:';
+	vhsRow.insertCell(1).innerHTML = gt_vhs.toFixed(3);
+	vhsRow.insertCell(2).innerHTML = pred_vhs.toFixed(3);
+	vhsRow.insertCell(3).innerHTML = (pred_vhs - gt_vhs).toFixed(3);
+
+	var detailsButton = document.createElement("button");
+	detailsButton.classList.add('btn');
+	detailsButton.classList.add('btn-link');
+	detailsButton.innerHTML = 'Show details';
+	accContainer.appendChild(accTable);
+	accContainer.appendChild(detailsButton);
+
+	cell.appendChild(accContainer);
 }
 
 function fillTable(data) {
