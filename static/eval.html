@@ -3,15 +3,22 @@
 <head>
 	<title>VHS Eval Page</title>
 
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" integrity="sha384-Smlep5jCw/wG7hdkwQ/Z5nLIefveQRIY9nfy6xoR1uRYBtpZgI6339F5dgvm/e9B" crossorigin="anonymous">
 
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
+
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" integrity="sha384-Smlep5jCw/wG7hdkwQ/Z5nLIefveQRIY9nfy6xoR1uRYBtpZgI6339F5dgvm/e9B" crossorigin="anonymous">	
 	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script>
 
 </head>
 <body>
 	<div class="row">
-		<div class="col-sm-8">
+		<div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Mean Squared Error:&nbsp;</div>
+		<div id="vhsmse">&nbsp;0</div>
+	</div>
+	<div class="row">
+		<div class="col">
 			
 			<table class="table table-striped" id="eval-table">
 				<thead>
@@ -23,41 +30,21 @@
 				<tbody>
 				</tbody>
 			</table>
-
-
-			<div id="individualAccuracyModal" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-hidden="tru">
-				<div class="modal-dialog modal-lg">
-					<div class="modal-content">
-						<div class="modal-header">
-							<button type="button" class="close" data-dissmiss="modal" aria-hidden="true">x</button>
-								<h4 class="modal-title" id="individualAccuracyModalLabel">
-									Accuracy for each point
-								</h4>
-						</div>
-						<div class="modal-body">
-							<table id="individualAccuracyTable" class="table table-bordered">
-								<thead>
-									<th scope="col">point</th>
-									<th scope="col">gt</th>
-									<th scope="col">pred</th>
-									<th scope="col">difference</th>
-								</thead>
-							</table>
-						</div>
-						<div class="modal-footer">
-							<button class="btn btn-primary" data-dismiss="modal">Close</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		
 		</div>
-
-		<div class="col-sm-4">MSE GOES HERE</div>
+	</div>
 	
+	<div id="points_dialog" title="Point by Point accuracy">
+		<table id="accuracyTable" class="table table-bordered">
+			<thead>
+				<th scope="col">point</th>
+				<th scope="col">gt</th>
+				<th scope="col">pred</th>
+				<th scope="col">difference</th>
+			</thead>
+			<tbody id="accTableBody"></tbody>
+		</table>
 	</div>
 
-	<script type="text/javascript" src="eval_data.json"></script>
 	<script type="text/javascript" src="eval.js"></script>
 </body>
-</html>
+</html>		

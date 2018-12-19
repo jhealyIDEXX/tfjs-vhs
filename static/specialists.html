@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Cardiologist Comparisson</title>
+
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
+
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" integrity="sha384-Smlep5jCw/wG7hdkwQ/Z5nLIefveQRIY9nfy6xoR1uRYBtpZgI6339F5dgvm/e9B" crossorigin="anonymous">	
+	<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script>
+
+</head>
+<body>
+	<div class="row">
+		<div style="padding: 0px 24px 0px 24px">MSE Between model and cardio 1: &nbsp;&nbsp;&nbsp;</div>
+		<div id='mseCardio1' style="border: 2px solid red"></div>
+
+		<div style="padding: 0px 24px 0px 24px">MSE between model and cardio 2:</div>
+		<div id = 'mseCardio2' style="border: 2px solid red"></div>
+		
+		<divstyle="padding: 0px 24px 0px 24px">MSE between cardio 1 and 2:</div>
+		<div id = 'mseCardioCardio' style="border: 2px solid red"></div>
+	</div>
+	<table class="table table-striped" id="cardio-table">
+		<thead>
+			<th scope="col">Cardio 1</th>
+			<th scope="col">Cardio 2</th>
+			<th scope="col">Pred</th>
+		</thead>
+		<tbody></tbody>
+	</table>
+</body>
+
+
+	<script type="text/javascript" src="specialists.js"></script>
+</html>	

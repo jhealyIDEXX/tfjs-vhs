@@ -1,4 +1,4 @@
-export const POINT_LABELS = {
+export const POINT_LABELS = [
 	0: 'Apex x',
 	1: 'Apex y',
 	2: 'TC x',
@@ -17,4 +17,4 @@ export const POINT_LABELS = {
 	15: 'T7 y',
 	16: 'T8 x',
 	17: 'T8 y'  	
-};
+];

@@ -22,9 +22,18 @@ Object.freeze(POINT_LABELS)
 const IMAGE_SIZE = 224;
 const COORD_SCALE = 5.0;
 var vhsModel = null;
+let gt_scores = [];
+let pred_scores = [];
+
 
 
 $(document).ready(function() {
+	$(function() {
+		$( "points_dialog" ).dialog({
+			autoOpen: false
+		});
+	});
+
 	loadModel();
 });
 
@@ -33,7 +42,7 @@ async function loadModel() {
 	console.log('model loaded');
 	vhsModel =  await tf.loadModel('models/vhs/model.json');
 
-	$.getJSON('eval_data.json', function(data) {
+	$.getJSON('data/eval_data.json', function(data) {
 		fillTable(data);
 	});
 }
@@ -66,11 +75,21 @@ function distance(x1, y1, x2, y2) {
 	return Math.sqrt(x*x + y*y);
 }
 
-function drawVhs(ctx, points, x, y, pred=true) {
+function getVHS(points) {
 	let minorAxis = distance(points[4], points[5], points[6], points[7]);
 	let majorAxis = distance(points[0], points[1], points[2], points[3]);
 	let vertebraeLine = distance(points[8], points[9], points[16], points[17]);
 	let vhs = (minorAxis+majorAxis)/(vertebraeLine*0.25);
+
+	return vhs;
+}
+
+
+function drawVhs(ctx, points, x, y, pred=true) {
+
+	let vhs = getVHS(points)
+
+
 	let text = ''
 	if(pred) {
 		text = 'Auto VHS: '+vhs.toFixed(2);
@@ -79,8 +98,6 @@ function drawVhs(ctx, points, x, y, pred=true) {
 	}
 	ctx.fillStyle = 'rgb(250, 250, 0)';
 	ctx.fillText(text, 5, 15);
-
-	return vhs.toFixed(2)
 }
 
 function drawCanvas(canvas, image, points, pred=true) {
@@ -98,7 +115,7 @@ function drawCanvas(canvas, image, points, pred=true) {
 	drawLine(ctx, points[4]*w, points[5]*h, points[6]*w, points[7]*h);
 	drawLine(ctx, points[8]*w, points[9]*h, points[16]*w, points[17]*h);
 
-	let vhs = drawVhs(ctx, points, points[16]*w+20, points[17]*h, pred);
+	drawVhs(ctx, points, points[16]*w+20, points[17]*h, pred);
 
 	ctx.fillStyle = 'rgb(200,0,0)';
 	ctx.fillRect(points[0]*w, points[1]*h, 2, 2);
@@ -118,37 +135,8 @@ function drawCanvas(canvas, image, points, pred=true) {
 	ctx.fillRect(points[14]*w, points[15]*h, 2, 2);
 	ctx.fillStyle = 'rgb(200,0,0)';
 	ctx.fillRect(points[16]*w, points[17]*h, 2, 2);
-
-	return vhs
 }
 
-/*
-function writeRow(image, annotation) {
-	var tableBody = document.getElementById('eval-table').getElementsByTagName('tbody')[0]
-	var row = tableBody.insertRow(tableBody.rows.length);
-
-	var img = document.createElement('img')
-	img.src = image.src;
-	img.style.height = IMAGE_SIZE+'px';
-	img.style.width = IMAGE_SIZE+'px';
-	var img_cell = row.insertCell(0);
-	img_cell.style.width='250px';
-	img_cell.appendChild(img);
-
-	
-	//draw ground truth
-	var gt_canvas = document.createElement('canvas');
-	gt_vhs = drawCanvas(gt_canvas, img, annotation, false);
-	gt_cell = row.insertCell(1);
-	gt_cell.style.width = '250px';
-	gt_cell.appendChild(gt_canvas);
-
-	var pred_canvas = document.createElement('canvas');
-	preds = predict(img);
-	pred_vhs = drawCanvas(pred_canvas, img, preds);
-
-}
-*/
 //assumes obj has a url pointing to s3 image, and an annotation object
 async function writeRow(obj) {
 	var tableBody = document.getElementById('eval-table').getElementsByTagName('tbody')[0]
@@ -173,7 +161,8 @@ async function writeRow(obj) {
 		img_cell.appendChild(this);
 
 		
-		gt_vhs = drawCanvas(gt_canvas, this, obj.annotation, pred=false);
+		let gt_vhs = getVHS(obj.annotation);
+		drawCanvas(gt_canvas, this, obj.annotation, pred=false);
 
 		var gt_cell = this.row.insertCell(1);
 		gt_cell.style.width='250px';
@@ -186,21 +175,8 @@ async function writeRow(obj) {
 			preds[i] = preds[i] / COORD_SCALE;
 		}
 
-		pred_vhs = drawCanvas(pred_canvas, this, preds)
-
-		/*
-		let img = new Image();
-		img.crossOrigin = 'anonymous';
-		img.style.height = IMAGE_SIZE + 'px';
-		img.style.width = IMAGE_SIZE + 'px';
-		img.src = this.src;
-		img.onload = function() {
-			this.height = IMAGE_SIZE;
-			this.width = IMAGE_SIZE;
-			this.preds = predict(this);
-			this.pred_vhs = drawCanvas(pred_canvas, this, this.preds)
-		};
-		*/
+		let pred_vhs = getVHS(preds);
+		drawCanvas(pred_canvas, this, preds);
 	
 		var pred_cell = this.row.insertCell(2);
 		pred_cell.style.width = '250px';
@@ -208,6 +184,8 @@ async function writeRow(obj) {
 
 		var acc_cell = this.row.insertCell(3);
 		create_accuracy(obj.annotation, preds, acc_cell);
+
+		pred_scores.push(pred_vhs);
 
 	};
 
@@ -220,7 +198,8 @@ function distance(x1, y1, x2, y2) {
 }
 
 function populate_individual_accuracy(gt, preds) {
-	var tableBody = document.getElementById('individualAccuracyTable').getElementsByTagName('tbody')[0]
+	var tableBody = $('#accTableBody')[0];
+	
 
 	for (let i = 0; i<gt.length; i++) {
 		var row = tableBody.insertRow(tableBody.rows.length);
@@ -267,7 +246,7 @@ function create_accuracy(gt, preds, cell) {
 
 
 	var diff_header = headerRow.insertCell(3);
-	diff_header.innerHTML = 'Difference (pixel value):';
+	diff_header.innerHTML = 'Difference :';
 
 	var vertebraeRow = accTable.insertRow(1);
 	vertebraeRow.insertCell(0).innerHTML = 'Vertebrae Length: ';
@@ -297,6 +276,15 @@ function create_accuracy(gt, preds, cell) {
 	detailsButton.classList.add('btn');
 	detailsButton.classList.add('btn-link');
 	detailsButton.innerHTML = 'Show details';
+	
+	detailsButton.onclick = function() {
+
+		$('#accTableBody').empty();
+		populate_individual_accuracy(gt, preds);
+		$("#points_dialog").dialog("open");
+
+	}
+
 	accContainer.appendChild(accTable);
 	accContainer.appendChild(detailsButton);
 
@@ -306,12 +294,28 @@ function create_accuracy(gt, preds, cell) {
 function fillTable(data) {
 	var tableBody = document.getElementById('eval-table').getElementsByTagName('tbody')[0]
 
-	for(let i = 0; i < data.length; i++) {
+	for(let i = 0; i < 5; i++) {
 		var row = tableBody.insertRow(tableBody.rows.length);
 		var obj = data[i];
+		gt_scores.push(getVHS(obj.annotation));
 
 		writeRow(obj)
 	}
-	
+
 }
+
+setInterval(function() {
+
+  if(gt_scores.length > 0 && gt_scores.length === pred_scores.length) {
+  	let mean_error = 0;
+  	for (let i =0; i< gt_scores.length; i++) {
+  		mean_error = mean_error + Math.abs(gt_scores[i]-pred_scores[i]);
+  	}
+
+  	mean_error = mean_error / gt_scores.length;
+
+  	$('#vhsmse').html(mean_error);
+  }
+}, 5000);
+
 
